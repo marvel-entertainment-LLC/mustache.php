@@ -45,4 +45,22 @@ class Mustache_LambdaHelper
             ->loadLambda((string) $string)
             ->renderInternal($this->context);
     }
+
+    /**
+     * Find a variable in the Mustache contaxt stack.
+     *
+     * @param string $id Context variable name
+     *
+     * @return mixed
+     */
+    public function find($id)
+    {
+        if ($id === '.') {
+            return $this->context->last();
+        } elseif (strpos($id, '.') === false) {
+            return $this->context->find($id);
+        } else {
+            return $this->context->findDot($id);
+        }
+    }
 }

@@ -36,4 +36,21 @@ class Mustache_Test_FiveThree_Functional_LambdaHelperTest extends PHPUnit_Framew
         $this->assertEquals('Mario', $one->render($foo));
         $this->assertEquals('MARIO', $two->render($foo));
     }
+
+    public function testFind() {
+        $context = new Mustache_Context(array(
+            'foo' => 1,
+            'bar' => 'b',
+            'baz' => array(
+                'qux' => 'WIN'
+            )
+        ));
+        $context->push('MOAR WIN');
+
+        $helper = new Mustache_LambdaHelper($this->mustache, $context);
+        $this->assertEquals(1, $helper->find('foo'));
+        $this->assertEquals('b', $helper->find('bar'));
+        $this->assertEquals('WIN', $helper->find('baz.qux'));
+        $this->assertEquals('MOAR WIN', $helper->find('.'));
+    }
 }
