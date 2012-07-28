@@ -23,7 +23,7 @@
  */
 class Mustache_Engine
 {
-    const VERSION      = '2.0.0-dev';
+    const VERSION      = '2.0.0';
     const SPEC_VERSION = '1.1.2';
 
     // Template cache
@@ -566,6 +566,8 @@ class Mustache_Engine
      *
      * @param string $fileName
      * @param string $source
+     *
+     * @codeCoverageIgnore
      */
     private function writeCacheFile($fileName, $source)
     {

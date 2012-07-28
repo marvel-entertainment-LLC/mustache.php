@@ -26,9 +26,11 @@ class Mustache_Compiler
     /**
      * Compile a Mustache token parse tree into PHP source code.
      *
-     * @param string $source Mustache Template source code
-     * @param string $tree   Parse tree of Mustache tokens
-     * @param string $name   Mustache Template class name
+     * @param string $source       Mustache Template source code
+     * @param string $tree         Parse tree of Mustache tokens
+     * @param string $name         Mustache Template class name
+     * @param bool   $customEscape (default: false)
+     * @param string $charset      (default: 'UTF-8')
      *
      * @return string Generated PHP source code
      */
@@ -51,7 +53,7 @@ class Mustache_Compiler
      * @param array $tree  Parse tree of Mustache tokens
      * @param int   $level (default: 0)
      *
-     * @return string Generated PHP source code;
+     * @return string Generated PHP source code
      */
     private function walk(array $tree, $level = 0)
     {
@@ -99,7 +101,6 @@ class Mustache_Compiler
                 case Mustache_Tokenizer::T_ESCAPED:
                     $code .= $this->variable($node[Mustache_Tokenizer::NAME], true, $level);
                     break;
-
 
                 case Mustache_Tokenizer::T_TEXT:
                     $code .= $this->text($node[Mustache_Tokenizer::VALUE], $level);
@@ -327,6 +328,8 @@ class Mustache_Compiler
 
     /**
      * Get the current escaper.
+     *
+     * @param string $value (default: '$value')
      *
      * @return string Either a custom callback, or an inline call to `htmlspecialchars`
      */
