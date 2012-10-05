@@ -90,6 +90,8 @@ class Mustache_Context
      *         'child' => array(
      *             'name' => 'Bob'
      *         ),
+     *         'getFathersName' =>
+     *              function($child) { return $child->father->name; },
      *     );
      *
      * ... and the Mustache following template:
@@ -99,25 +101,56 @@ class Mustache_Context
      * ... the `name` value is only searched for within the `child` value of the global Context, not within parent
      * Context frames.
      *
+     * NOTE: method now supports parameter passing syntax in the case the context resolves into
+     *       a method call. Parameters are resolved by utilizing the entire context.
+     *       Using the following syntax:
+     *
+     *     {{ child.getFathersName(child) }}
+     *
      * @param string $id Dotted variable selector
      *
      * @return mixed Variable value, or '' if not found
      */
     public function findDot($id)
     {
-        $chunks = explode('.', $id);
-        $first  = array_shift($chunks);
-        $value  = $this->findVariableInStack($first, $this->stack);
+        preg_match_all('/(\w+)(?:\(([.,\w]+)\))?/', $id, $match);
+        // match[1] has id, match[2] has params as CSV
+        $first  = array_shift($match[1]);
+        $params = array_shift($match[2]);
+        $chunks = $match[1];
+        $value  = $this->findVariableInStack($first, $this->stack, $this->params($params));
 
-        foreach ($chunks as $chunk) {
+        foreach ($chunks as $chunkKey => $chunk) {
             if ($value === '') {
                 return $value;
             }
 
-            $value = $this->findVariableInStack($chunk, array($value));
+            $value = $this->findVariableInStack($chunk, array($value), $this->params($match[2][$chunkKey]));
         }
 
         return $value;
+    }
+
+    /**
+    * Traverse a CSV of function parameters to resolve the values
+    * from the context stack. It pulls together the parameters into an array to be
+    * ingested by the associated context in findVariableInStack
+    *
+    * @param  string $str CSV list of parameters to resolve from the context
+    *
+    * @return array  returns numerical indexed array of resolved parameters
+    */
+    private function params($str) {
+        $params = array();
+        $plist  = explode(',', $str);
+        //var_dump("str = $str","PLIST", $plist);
+        if (empty($plist)) return $params;
+        foreach ($plist as $id) {
+            if (empty($id)) continue;
+            $findFunc = strpos($id,'.')!==FALSE ? 'findDot' : 'find';
+            $params[] = $this->$findFunc($id);
+        }
+        return $params;
     }
 
     /**
@@ -127,15 +160,16 @@ class Mustache_Context
      *
      * @param string $id    Variable name
      * @param array  $stack Context stack
+     * @param array  $args  function parameters to pass incase of method context
      *
      * @return mixed Variable value, or '' if not found
      */
-    private function findVariableInStack($id, array $stack)
+    private function findVariableInStack($id, array $stack, $args=array())
     {
         for ($i = count($stack) - 1; $i >= 0; $i--) {
             if (is_object($stack[$i])) {
                 if (method_exists($stack[$i], $id)) {
-                    return $stack[$i]->$id();
+                    return call_user_func_array(array($stack[$i],$id), $args);
                 } elseif (isset($stack[$i]->$id)) {
                     return $stack[$i]->$id;
                 }
