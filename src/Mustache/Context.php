@@ -113,7 +113,7 @@ class Mustache_Context
      */
     public function findDot($id)
     {
-        preg_match_all('/(\w+)(?:\(([.,\w]+)\))?/', $id, $match);
+        preg_match_all('/(\w+)(?:\(([.,\w\'\"]+)\))?/', $id, $match);
         // match[1] has id, match[2] has params as CSV
         $first  = array_shift($match[1]);
         $params = array_shift($match[2]);
@@ -133,22 +133,25 @@ class Mustache_Context
 
     /**
     * Traverse a CSV of function parameters to resolve the values
-    * from the context stack. It pulls together the parameters into an array to be
-    * ingested by the associated context in findVariableInStack
+    * from the context stack or as php literals if quoted value. It pulls together
+    * the parameters into an array to be ingested by the associated context in findVariableInStack
     *
-    * @param  string $str CSV list of parameters to resolve from the context
+    * @param  string $str CSV list of parameters to resolve from the context or as literals
     *
     * @return array  returns numerical indexed array of resolved parameters
     */
     private function params($str) {
         $params = array();
         $plist  = explode(',', $str);
-        //var_dump("str = $str","PLIST", $plist);
         if (empty($plist)) return $params;
         foreach ($plist as $id) {
             if (empty($id)) continue;
-            $findFunc = strpos($id,'.')!==FALSE ? 'findDot' : 'find';
-            $params[] = $this->$findFunc($id);
+            if ( strpos($id,'"')!== FALSE || strpos($id,"'") !== FALSE )
+                $params[] = eval("return $id;");
+            else {
+                $findFunc = strpos($id,'.')!==FALSE ? 'findDot' : 'find';
+                $params[] = $this->$findFunc($id);
+            }
         }
         return $params;
     }
