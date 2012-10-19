@@ -232,7 +232,10 @@ class Mustache_Compiler
 
     const PARTIAL = '
         if ($partial = $this->mustache->loadPartial(%s)) {
+            $thisRef = array(\'this\' => $value);
+            $context->push($thisRef);
             $buffer .= $partial->renderInternal($context, %s);
+            $context->pop(); unset($thisRef);
         }
     ';
 
