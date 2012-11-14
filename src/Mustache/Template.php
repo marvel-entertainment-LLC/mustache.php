@@ -141,7 +141,11 @@ abstract class Mustache_Template
         }
 
         if (!empty($context)) {
-            $stack->push($context);
+            if ($this->isIterable($context)) {
+                foreach ($context as $value)
+                    $stack->push($value);
+            } else
+                $stack->push($context);
         }
 
         return $stack;
