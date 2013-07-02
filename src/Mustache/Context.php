@@ -67,6 +67,7 @@ class Mustache_Context
      *  * If the Context frame is an associative array which contains the key $id, returns the value of that element.
      *  * If the Context frame is an object, this will check first for a public method, then a public property named
      *    $id. Failing both of these, it will try `__isset` and `__get` magic methods.
+     *    Also, the object itself is returned if $id is __self__ special variable.
      *  * If a value named $id is not found in any Context frame, returns an empty string.
      *
      * @param string $id Variable name
@@ -113,8 +114,7 @@ class Mustache_Context
      */
     public function findDot($id)
     {
-        preg_match_all('/(\w+)(?:\(([.,\w\'\"]+)\))?/', $id, $match);
-        // match[1] has id, match[2] has params as CSV
+        preg_match_all('/(\w+)(?:\(([.,\w\'\"\s]+)\))?/', $id, $match);
         $first  = array_shift($match[1]);
         $params = array_shift($match[2]);
         $chunks = $match[1];
@@ -150,7 +150,7 @@ class Mustache_Context
                 $params[] = eval("return $id;");
             else {
                 $findFunc = strpos($id,'.')!==FALSE ? 'findDot' : 'find';
-                $params[] = $this->$findFunc($id);
+                $params[] = $this->$findFunc(trim($id));
             }
         }
         return $params;
@@ -171,6 +171,8 @@ class Mustache_Context
     {
         for ($i = count($stack) - 1; $i >= 0; $i--) {
             if (is_object($stack[$i])) {
+                if ('__self__' == strtolower($id))
+                    return $stack[$i];
                 if (method_exists($stack[$i], $id)) {
                     return call_user_func_array(array($stack[$i],$id), $args);
                 } elseif (isset($stack[$i]->$id)) {
