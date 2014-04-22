@@ -33,6 +33,8 @@ class Mustache_ParameterList
         array(T_ARRAY, '\)'), // arrays
         array(T_STRING, '[,\)]'), // string var references
         array(T_CONSTANT_ENCAPSED_STRING, null), // string literal
+        array(T_DNUMBER, null), // decimal numbers
+        array(T_LNUMBER, null), // regular numbers
     );
 
     /**
@@ -66,9 +68,9 @@ class Mustache_ParameterList
 
     /**
      * Helper method to compile all the tokens that make up
-     * an individual parameter. Only thing method needs is the
-     * running list of tokens and the token regex that ends the
-     * parameter.  Method supports parenthesis nesting.
+     * an individual parameter. The only thing method needs is the
+     * current list of tokens and the token regex that ends the
+     * parameter token sequence.  Method supports parenthesis nesting.
      * 
      * @param  string   $endToken   Token regex used to mark end of parameter.
      * @param  array    $tokens     Reference to whole token list, advances pointer.
@@ -83,11 +85,12 @@ class Mustache_ParameterList
             if ($text == '(') ++$nesting;
             if ($text == ')') --$nesting;
             $param .= $text;
-            empty($endToken) || $tok = next($tokens);
+
+            $atEnd = (bool) preg_match("/$endToken/",$text);
+            if ($nesting || (!empty($endToken) && !$atEnd))
+                $tok = next($tokens);
         } while (
-            $tok && 
-            $endToken && 
-            ($nesting > 0 || !preg_match("/$endToken/",$text))
+            $tok && $endToken && ($nesting > 0 || !$atEnd)
         );
         $param = rtrim($param, ',');
         return $param;
