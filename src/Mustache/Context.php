@@ -114,7 +114,7 @@ class Mustache_Context
      */
     public function findDot($id)
     {
-        preg_match_all('/(\w+)(?:\(([.,\w\'\"\s]+)\))?/', $id, $match);
+        preg_match_all('/(\w+)(?:\((.+)\))?/', $id, $match);
         $first  = array_shift($match[1]);
         $params = array_shift($match[2]);
         $chunks = $match[1];
@@ -142,7 +142,7 @@ class Mustache_Context
     */
     private function params($str) {
         $params = array();
-        $plist  = explode(',', $str);
+        $plist  = Mustache_ParameterList::explode($str);
         if (empty($plist)) return $params;
         foreach ($plist as $id) {
             if (empty($id)) continue;
