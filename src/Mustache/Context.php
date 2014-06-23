@@ -173,10 +173,12 @@ class Mustache_Context
             if (is_object($stack[$i])) {
                 if ('__self__' == strtolower($id))
                     return $stack[$i];
-                if (method_exists($stack[$i], $id)) {
-                    return call_user_func_array(array($stack[$i],$id), $args);
-                } elseif (isset($stack[$i]->$id)) {
+                // Do the property check first
+                // is_callable is very permissive with objects with __call magic method
+                if (isset($stack[$i]->$id)) {
                     return $stack[$i]->$id;
+                } elseif (is_callable(array($stack[$i], $id))) {
+                    return call_user_func_array(array($stack[$i], $id), $args);
                 }
             } elseif (is_array($stack[$i]) && array_key_exists($id, $stack[$i])) {
                 return $stack[$i][$id];
